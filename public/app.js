@@ -1,29 +1,82 @@
-const form = document.getElementById('translate-form');
-const result = document.getElementById('result');
+const fields = {
+  sv: document.getElementById('sv'),
+  en: document.getElementById('en'),
+  fa: document.getElementById('fa')
+};
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
+const statusElement = document.getElementById('status');
+let suppressInputEvents = false;
+let debounceTimer;
 
-  const text = document.getElementById('text').value;
-  const targetLang = document.getElementById('targetLang').value;
+function setStatus(message, isError = false) {
+  statusElement.textContent = message;
+  statusElement.style.color = isError ? '#b00020' : '#222';
+}
 
-  try {
-    const response = await fetch('/api/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ text, targetLang })
-    });
+async function translateFrom(sourceLang, text) {
+  const targetLangs = Object.keys(fields).filter((lang) => lang !== sourceLang);
 
-    const data = await response.json();
+  const response = await fetch('/api/translate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ text, sourceLang, targetLangs })
+  });
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Något gick fel.');
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Översättning misslyckades.');
+  }
+
+  return data.translations;
+}
+
+function onInput(sourceLang) {
+  return () => {
+    if (suppressInputEvents) {
+      return;
     }
 
-    result.textContent = data.translatedText;
-  } catch (error) {
-    result.textContent = `Fel: ${error.message}`;
-  }
+    const text = fields[sourceLang].value.trim();
+
+    clearTimeout(debounceTimer);
+
+    if (!text) {
+      suppressInputEvents = true;
+      Object.entries(fields).forEach(([lang, field]) => {
+        if (lang !== sourceLang) {
+          field.value = '';
+        }
+      });
+      suppressInputEvents = false;
+      setStatus('');
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      setStatus('Översätter...');
+
+      try {
+        const translations = await translateFrom(sourceLang, text);
+
+        suppressInputEvents = true;
+        Object.entries(translations).forEach(([lang, translatedText]) => {
+          if (fields[lang]) {
+            fields[lang].value = translatedText;
+          }
+        });
+        suppressInputEvents = false;
+
+        setStatus('Klart.');
+      } catch (error) {
+        setStatus(`Fel: ${error.message}`, true);
+      }
+    }, 400);
+  };
+}
+
+Object.keys(fields).forEach((lang) => {
+  fields[lang].addEventListener('input', onInput(lang));
 });
