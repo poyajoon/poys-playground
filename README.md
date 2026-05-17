@@ -20,12 +20,24 @@ npm run dev
 
 - http://localhost:3000
 
-## Translation API
+## Lokal lexikon-baserad översättning
 
-Backenden använder LibreTranslate via `POST /api/translate`.
+Backenden använder nu ett lokalt lexikon istället för ett externt API.
 
-Du kan ändra URL till översättningsleverantören med miljövariabeln:
+- Lexikonfil: `data/lexicon.json`
+- Format: JSON-array med objekt där **alla tre språk** finns i varje post:
 
-```bash
-LIBRETRANSLATE_URL=https://libretranslate.com/translate
+```json
+{
+  "en": "hello",
+  "sv": "hej",
+  "fa": "سلام"
+}
 ```
+
+### Hur lookup fungerar
+
+- Inmatning normaliseras (trim + lowercase) före uppslag.
+- Backend matchar exakt ord/frase i källspråket (`sv`, `en`, `fa`).
+- Hittad post returnerar översättning till önskade målspråk.
+- Om ordet/frase inte finns i lexikonet returneras ett 404-fel.

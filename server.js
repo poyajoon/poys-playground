@@ -1,44 +1,66 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const dotenv = require('dotenv');
-
-dotenv.config();
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const LIBRETRANSLATE_URL =
-  process.env.LIBRETRANSLATE_URL || 'https://libretranslate.com/translate';
+const SUPPORTED_LANGS = ['sv', 'en', 'fa'];
+const lexiconPath = path.join(__dirname, 'data', 'lexicon.json');
+
+function normalize(text) {
+  return text.trim().toLowerCase();
+}
+
+function loadLexicon() {
+  const raw = fs.readFileSync(lexiconPath, 'utf8');
+  const entries = JSON.parse(raw);
+
+  if (!Array.isArray(entries)) {
+    throw new Error('Lexicon must be an array.');
+  }
+
+  const index = new Map();
+
+  entries.forEach((entry, entryIndex) => {
+    SUPPORTED_LANGS.forEach((lang) => {
+      const value = entry[lang];
+
+      if (typeof value !== 'string' || !value.trim()) {
+        throw new Error(`Invalid or missing "${lang}" in lexicon entry #${entryIndex + 1}.`);
+      }
+
+      const key = `${lang}:${normalize(value)}`;
+      if (index.has(key)) {
+        throw new Error(`Duplicate term for ${lang}: "${value}".`);
+      }
+
+      index.set(key, entry);
+    });
+  });
+
+  return index;
+}
+
+const lexiconIndex = loadLexicon();
+
+function translateWithLexicon(text, sourceLang, target) {
+  const sourceKey = `${sourceLang}:${normalize(text)}`;
+  const entry = lexiconIndex.get(sourceKey);
+
+  if (!entry) {
+    throw new Error(`Ordet/fråsen "${text}" saknas i lexikonet.`);
+  }
+
+  return entry[target];
+}
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-async function translateWithLibre(text, source, target) {
-  const response = await fetch(LIBRETRANSLATE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      q: text,
-      source,
-      target,
-      format: 'text'
-    })
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok || !data.translatedText) {
-    throw new Error(data.error || 'Translation API request failed.');
-  }
-
-  return data.translatedText;
-}
-
-app.post('/api/translate', async (req, res) => {
+app.post('/api/translate', (req, res) => {
   const { text, sourceLang, targetLangs } = req.body || {};
 
   if (!text || !sourceLang || !Array.isArray(targetLangs) || targetLangs.length === 0) {
@@ -47,20 +69,26 @@ app.post('/api/translate', async (req, res) => {
     });
   }
 
+  if (!SUPPORTED_LANGS.includes(sourceLang)) {
+    return res.status(400).json({ error: `Unsupported source language: ${sourceLang}.` });
+  }
+
   const uniqueTargets = [...new Set(targetLangs)].filter((lang) => lang && lang !== sourceLang);
 
+  if (uniqueTargets.some((lang) => !SUPPORTED_LANGS.includes(lang))) {
+    return res.status(400).json({ error: 'One or more target languages are not supported.' });
+  }
+
   try {
-    const entries = await Promise.all(
-      uniqueTargets.map(async (target) => [
-        target,
-        await translateWithLibre(text, sourceLang, target)
-      ])
-    );
+    const entries = uniqueTargets.map((target) => [
+      target,
+      translateWithLexicon(text, sourceLang, target)
+    ]);
 
     return res.json({ translations: Object.fromEntries(entries) });
   } catch (error) {
-    return res.status(502).json({
-      error: `Translation service failed: ${error.message}`
+    return res.status(404).json({
+      error: `Lexicon translation failed: ${error.message}`
     });
   }
 });
