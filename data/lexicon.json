@@ -1,0 +1,22 @@
+[
+  {"en":"hello","sv":"hej","fa":"سلام"},
+  {"en":"goodbye","sv":"hejdå","fa":"خداحافظ"},
+  {"en":"yes","sv":"ja","fa":"بله"},
+  {"en":"no","sv":"nej","fa":"نه"},
+  {"en":"please","sv":"snälla","fa":"لطفاً"},
+  {"en":"thank you","sv":"tack","fa":"متشکرم"},
+  {"en":"sorry","sv":"förlåt","fa":"متاسفم"},
+  {"en":"water","sv":"vatten","fa":"آب"},
+  {"en":"food","sv":"mat","fa":"غذا"},
+  {"en":"house","sv":"hus","fa":"خانه"},
+  {"en":"car","sv":"bil","fa":"ماشین"},
+  {"en":"school","sv":"skola","fa":"مدرسه"},
+  {"en":"book","sv":"bok","fa":"کتاب"},
+  {"en":"friend","sv":"vän","fa":"دوست"},
+  {"en":"family","sv":"familj","fa":"خانواده"},
+  {"en":"work","sv":"arbete","fa":"کار"},
+  {"en":"morning","sv":"morgon","fa":"صبح"},
+  {"en":"night","sv":"natt","fa":"شب"},
+  {"en":"how are you","sv":"hur mår du","fa":"حالت چطوره"},
+  {"en":"i love you","sv":"jag älskar dig","fa":"دوستت دارم"}
+]
