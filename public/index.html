@@ -4,26 +4,52 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Translation Playground</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+
+      .fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 140px;
+      }
+
+      #status {
+        margin-top: 1rem;
+        min-height: 1.4rem;
+      }
+    </style>
   </head>
   <body>
     <h1>Translation Playground</h1>
 
-    <form id="translate-form">
+    <div class="fields">
       <label>
-        Text
-        <textarea id="text" required></textarea>
+        Svenska
+        <textarea id="sv" placeholder="Skriv på svenska..."></textarea>
       </label>
-      <br />
-      <label>
-        Målspråk
-        <input id="targetLang" type="text" placeholder="t.ex. en" required />
-      </label>
-      <br />
-      <button type="submit">Översätt</button>
-    </form>
 
-    <h2>Resultat</h2>
-    <pre id="result"></pre>
+      <label>
+        Engelska
+        <textarea id="en" placeholder="Write in English..."></textarea>
+      </label>
+
+      <label>
+        Persiska
+        <textarea id="fa" placeholder="به فارسی بنویسید..."></textarea>
+      </label>
+    </div>
+
+    <p id="status"></p>
 
     <script src="/app.js"></script>
   </body>
